@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width">
+	<title>Gr3 - Math - Chapter 3 - English - Final Version - </title>
+	<style>
+		.no-margin {
+			margin: 0px;
+			padding: 0px;
+		}
+		.pull-left {
+			float: left;
+		}
+		.clear {
+			clear: both;
+		}
+	</style>
+	<script type="text/javascript" language="javascript" src="javascript/jquery-1.7.1.min.js"></script>
+	<script type="text/javascript" language="javascript" src="icplayer/icplayer.nocache.js"></script>
+	
+		<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    TeX: {extensions: ["mhchem.js", "AMSsymbols.js", "AMSmath.js"]},
+		extensions: ["tex2jax.js", "/media/js/forminput.js"],
+		skipStartupTypeset: true,
+		messageStyle: "none",
+		jax: ["input/TeX","output/HTML-CSS"],
+		playerObject: 'player'
+  });
+	</script>
+    <script type="text/javascript"
+  		src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.1/MathJax.js">
+	</script>
+
+	<script language="javascript">
+	var player,
+		scorm,
+		start;
+	
+	function icOnAppLoaded(){
+        function iframeResizeRequest () {
+            if (window.parent != null && window.parent.postMessage != null) {
+				var height = $('#_icplayer').css('height');
+				var width = $('#_icplayer').css('width');
+				var message = "resize: width=" + width + ";height=" + height;
+				var viewport = document.querySelector("meta[name=viewport]");
+				viewport.setAttribute('content', 'width=' + parseInt(width));
+				$('#lesson').width(width);
+				$('#lesson').css('margin', '0 auto');
+				window.parent.postMessage(message, '*');
+			}
+        }
+
+	    player = icCreatePlayer('_icplayer');
+  		scorm = getScorm();
+  		var result = scorm.initializeScormCommunication(window);
+  		if (result == false) {
+  	  		scorm = getScorm_1_2();
+  	  		scorm.initializeScormCommunication(window);
+  		}
+		var savedState = scorm.loadState();
+		if (savedState) {
+			player.setState(savedState);
+		}
+		var location = scorm.loadLocation();
+		if (location == false) {
+			location = '0';
+		}
+    	player.load('pages/main.xml', parseInt(location));
+    	player.onPageLoaded(function(){
+    		start = new Date().getTime();
+            iframeResizeRequest();
+		});
+
+        player.onOutstretchHeight(function () {
+            iframeResizeRequest();
+        });
+	}
+
+	function registerEventListeners () {
+		// event pagehide doesn't work properly in Chrome browser when the document is in iframe
+		if (window.frameElement !== null && navigator.userAgent.indexOf("Chrome") > -1) {
+			window.addEventListener("beforeunload", doUnload, false);
+		}
+		else if ("onpagehide" in window) {
+			window.addEventListener("pagehide", doUnload, false);
+		} else {
+			window.addEventListener("beforeunload", doUnload, false);
+		}
+	}
+
+	function doStart() {
+		registerEventListeners();
+	}
+	
+	/**
+	* Saves state, score and location of SCORM package on page leave.
+	*/
+	function doUnload() {
+		var end = new Date().getTime();
+		var ps = player.getPlayerServices();
+		var model = ps.getPresentation();
+		var scoreService = ps.getScore();
+		var sumOfScore = 0.0;
+		var sumOfMaxScore = 0.0;
+		var sumOfScaledScore = 0.0;
+		var count = 0;
+		for(var i = 0; i < model.getPageCount(); i++){
+			var page = model.getPage(i);
+			if(page.isReportable()){
+				var score = scoreService.getPageScore(page.getName());
+				sumOfScaledScore += score['maxScore'] ? score['score']/score['maxScore'] : 0;
+				sumOfScore += score['score'];
+				sumOfMaxScore += score['maxScore'];
+				scorm.setPageName(count, 'Page_' + i);
+				scorm.setPageMinScore(count, 0);
+				scorm.setPageMaxScore(count, score['maxScore']);
+				scorm.setPageRawScore(count, score['score']);
+				scorm.setPageScaledScore(count, score['maxScore'] ? score['score']/score['maxScore'] : 0);
+				count += 1;
+			}
+		}
+
+		scorm.setMinScore(0);
+		scorm.setMaxScore(count);
+		scorm.setRawScore(sumOfScaledScore);
+		scorm.setScaledScore(count > 0 ? sumOfScaledScore/count : 0);
+		scorm.setSessionTime(end - start);
+		scorm.saveState(player.getState());
+		scorm.saveLocation(ps.getCurrentPageIndex());
+		scorm.setCompleted();
+		scorm.terminateScormCommunication();
+	}
+	</script>
+</head>
+<!-- max-width:600px -->
+<body class="no-margin" onload="doStart();">
+	<div id="lesson">
+		<div id="_icplayer" class="no-margin pull-left"></div>
+	</div>
+	<div class="clear"></div>
+</body>
+
+</html>
